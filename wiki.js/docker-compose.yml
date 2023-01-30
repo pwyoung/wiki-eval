@@ -1,0 +1,32 @@
+version: "3"
+services:
+
+  # Use the latest Debian-based image
+  # It's bigger than Alpine, but lets us install common tools
+  # https://hub.docker.com/_/postgres
+  postgresdb:
+    image: "postgres:15-bullseye"
+    env_file:
+      - ./docker.postgres.env
+    volumes:
+      - ./postgresql/pg_data:/var/lib/postgresql/data/
+      - ./postgresql/scripts:/scripts:rw
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # https://hub.docker.com/r/requarks/wiki
+  wiki:
+    image: requarks/wiki:2.5
+    depends_on:
+      - postgresdb
+    env_file:
+      - ./docker.wiki.env
+    restart: unless-stopped
+    ports:
+      - "80:3000"
+      - "443:3443"
